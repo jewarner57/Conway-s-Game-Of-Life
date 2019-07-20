@@ -1,158 +1,247 @@
 var grid;
+let paused = false;
+let genNum = 1;
 
 function setup () {
-  createCanvas(400, 400);
-  grid = new Grid(20);
+  createCanvas(500, 400);
+  grid = new Grid(10);
   grid.randomize();
-
-  print(grid.isValidPosition(0, 0));
+  
+  pauseButton = new MenuItem("Pause", 0, color(200, 0, 200), 20, pauseGame);
+  resetButton = new MenuItem("Reset", 55, color(200, 0, 200), 20, resetBoard);
+  cellCount = new MenuItem("0", 110, color(200, 0, 200), 15);
+  genCount = new MenuItem("0", 165, color(200, 0, 200), 15);
+  
+  //Print Statements
+  print("Getting the reset button to not alternate colors when pressed. It seems like a simple fix looking back on it now, but in the moment I could not figure it out.");
+  print("Somewhat, for awhile I was teetering on the edge of only doing two of the challenges, but I pushed through and enjoyed finishing two more.");
+  print("This would be a cool addition to my portfolio.");
+  print("As of now I don't have a huge number of projects in my portfolio so any addition helps. I also feel like having a portfolio with some projects that are more on the less serious / more fun side can prevent your portfolio from being boring.");
 }
 
 function draw () {
-  background(250);
-
-  grid.updateNeighborCounts();
-  grid.updatePopulation();
+  background(230);
+  if(paused === false) {
+    +grid.updateNeighborCounts();
+    grid.updatePopulation();
+    
+    genNum++;
+  }
   grid.draw();
+  
+  pauseButton.draw();
+  resetButton.draw();
+  cellCount.text = "Living:" + grid.getNumAliveCells();
+  cellCount.draw();
+  genCount.text = "Gen#:" + genNum;
+  genCount.draw();
 }
 
-function mousePressed() {
-  // grid.updatePopulation();
-
-  // var randomColumn = floor(random(grid.numberOfColumns));
-  // var randomRow = floor(random(grid.numberOfRows));
-
-  // var randomCell = grid.cells[randomColumn][randomRow];
-  // var neighborCount = grid.getNeighbors(randomCell).length;
-
-  // print("cell at " + randomCell.column + ", " + randomCell.row + " has " + neighborCount + " neighbors");
-// print(neighbors.length || "undefined");
-
-  grid.updateNeighborCounts();
-  print(grid.cells);
+function pauseGame() {
+  if(paused) {
+    paused = false;
+    this.buttonColor = 240;
+  }
+  else {
+    paused = true;
+    this.buttonColor = 200;
+  }
 }
 
-class Grid {
-  constructor (cellSize) {
-    this.cellSize = cellSize;
-    this.numberOfColumns = floor(width / this.cellSize);
-    this.numberOfRows = floor(height / this.cellSize);
+function resetBoard() {
+  
+  grid = new Grid(10);
+  grid.randomize();
+  genNum = 1;
+  
+}
 
-    this.cells = new Array(this.numberOfColumns);
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      this.cells[column] = new Array(this.numberOfRows);
-    }
-
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      for (var row = 0; row < this.numberOfRows; row++) {
-        this.cells[column][row] = new Cell(column, row, cellSize)
-      }
-    }
-    print(this.cells);
+class MenuItem {
+  constructor (text, yPosition, textColor, fontSize, action) {
+  
+    this.xPosition = width-98;
+    this.yPosition = yPosition;
+    this.text = text;
+    this.action = action;
+    this.buttonColor = 240;  
+    this.fontSize = fontSize;
+    
   }
-
-  draw () {
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      for (var row = 0; row < this.numberOfRows; row++) {
-        this.cells[column][row].draw();
-      }
-    }
+  
+  draw() {
+    fill(this.buttonColor);
+    rect(width-98, this.yPosition, 100, 50);
+    
+    textSize(this.fontSize);
+    
+    fill(100, 0, 100);
+    text(this.text, this.xPosition + 20, this.yPosition + 32);
   }
-
-  randomize () {
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      for (var row = 0; row < this.numberOfRows; row++) {
-        var value = floor(random(2));
-        this.cells[column][row].setIsAlive(value);
-      }
-    }
-  }
-
-  updateNeighborCounts () {
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      for (var row = 0; row < this.numberOfRows; row++) {
-        var currentCell = this.cells[column][row]
-        currentCell.liveNeighborCount = 0;
-
-        var neighborsArray = this.getNeighbors(currentCell);
-
-        for (var position in neighborsArray) {
-          if (neighborsArray[position].isAlive) {
-            currentCell.liveNeighborCount += 1;
-          }
-        }
-      }
+  
+  isClicked(x, y) {
+    if((x > this.xPosition && x < this.xPosition + 100) && (y > this.yPosition && y < this.yPosition + 50)) {
+      
+      this.action();
+      
     }
   }
-
-  getNeighbors(currentCell) {
-    var neighbors = [];
-
-    for (var columnOffset = -1; columnOffset <= 1; columnOffset++) {
-      for (var rowOffset = -1; rowOffset <= 1; rowOffset++) {
-        var neighborX = currentCell.column + columnOffset;
-        var neighborY = currentCell.row + rowOffset;
-
-        if (this.isValidPosition(neighborX, neighborY)) {
-          var neighborCell = this.cells[neighborX][neighborY];
-
-          if (neighborCell != currentCell) {
-            neighbors.push(neighborCell);
-          }
-        }
-      }
-    }
-
-    return neighbors;
-  }
-
-  isValidPosition (column, row) {
-    var validColumn = column >= 0 && column < this.numberOfColumns;
-    var validRow = row >= 0 && row < this.numberOfRows
-
-    return  validColumn && validRow;
-  }
-
-  updatePopulation () {
-    for (var column = 0; column < this.numberOfColumns; column ++) {
-      for (var row = 0; row < this.numberOfRows; row++) {
-        this.cells[column][row].liveOrDie();
-      }
-    }
-  }
+  
 }
 
 class Cell {
   constructor (column, row, size) {
+    
+    this.isAlive = false
     this.column = column;
     this.row = row;
     this.size = size;
-    this.isAlive = false;
     this.liveNeighborCount = 0;
+    
   }
-
-  draw () {
-    if (this.isAlive) {
-      fill(color(200, 0, 200));
-    } else {
-      fill(color(240));
+  
+  liveOrDie() {
+    if(this.liveNeighborCount < 2) {
+      this.isAlive = false;
+    }
+    if(this.liveNeighborCount > 3) {
+      this.isAlive = false;
+    }
+    if(this.liveNeighborCount === 3) {
+      this.isAlive = true;
+    }
+  }
+  
+  setIsAlive(value) {
+    if(value) {
+      this.isAlive = true;
+    }
+    else {
+      this.isAlive = false;
+    }
+  }
+  
+  draw() {
+    if(this.isAlive) {
+      fill(200, 0, 200);
+    }
+    else {
+      fill(240);
     }
     noStroke();
     rect(this.column * this.size + 1, this.row * this.size + 1, this.size - 1, this.size - 1);
   }
+}
 
-  setIsAlive (value) {
-    if (value) {
-      this.isAlive = true;
-    } else {
-      this.isAlive = false;
+class Grid {
+  constructor (cellSize) {
+    // update the contructor to take cellSize as a parameter
+    // use cellSize to calculate and assign values for numberOfColumns and numberOfRows
+    this.numberOfColumns = Math.floor((width-100)/cellSize);
+    this.numberOfRows = height/cellSize;
+    this.cellSize = cellSize;
+    
+    this.cells = new Array(this.numberOfColumns);
+    for(var i = 0;i < this.numberOfColumns; i++) {
+      this.cells[i] = new Array(this.numberOfRows)
+    }
+    
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        this.cells[column][row] = new Cell(column, row, cellSize);
+      }
+    }
+  }
+  
+  getNumAliveCells() {
+    let liveOnes = 0;
+    
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        if(this.cells[column][row].isAlive) {
+          liveOnes += 1;
+        }
+      }
+    }
+    
+    return liveOnes;
+  }
+  
+  updateNeighborCounts() {
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        
+        this.cells[column][row].liveNeighborCount = 0;
+        let neighborList = this.getNeighbors(this.cells[column][row]);
+
+        for(var i = 0; i < neighborList.length; i++) {
+          if(neighborList[i].isAlive) {
+            this.cells[column][row].liveNeighborCount += 1;
+          }
+        }
+      }
+    }
+  }
+  
+  isValidPosition(column, row) {
+    
+    return (row >= 0 && row < this.cells.length) && (column >= 0 && column < this.cells[0].length);
+    
+  }
+  
+  getNeighbors(currentCell) {
+    
+    let neighborList = [];
+    
+    for (var xOffset = -1; xOffset <= 1; xOffset++) {
+      for (var yOffset = -1; yOffset <= 1; yOffset++) {
+        
+        var neighborColumn = currentCell.column + xOffset;
+        var neighborRow = currentCell.row + yOffset;
+        
+        if(this.isValidPosition(neighborColumn, neighborRow) && !(neighborColumn === currentCell.column && neighborRow === currentCell.row)) {
+        
+          neighborList.push(this.cells[neighborColumn][neighborRow]);
+          
+        }
+        
+      }
+    }
+    
+    return neighborList;
+  }
+  
+  updatePopulation() {
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        
+        this.cells[column][row].liveOrDie();
+        
+      }
+    }
+  }
+  
+  randomize() {
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        
+        this.cells[column][row].setIsAlive(Math.floor(random(2)));
+        
+      }
     }
   }
 
-  liveOrDie () {
-    if      (this.isAlive && this.liveNeighborCount <  2) this.isAlive = false;   // Loneliness
-    else if (this.isAlive && this.liveNeighborCount >  3) this.isAlive = false;   // Overpopulation
-    else if (!this.isAlive && this.liveNeighborCount === 3)  this.isAlive = true; // Reproduction
-    // otherwise stay the same
+  draw () {
+    for (var column = 0; column < this.numberOfColumns; column ++) {
+      for (var row = 0; row < this.numberOfRows; row++) {
+        
+        this.cells[column][row].draw();
+        
+      }
+    }
   }
+}
+
+function mousePressed() {
+  pauseButton.isClicked(mouseX, mouseY);
+  resetButton.isClicked(mouseX, mouseY);
 }
